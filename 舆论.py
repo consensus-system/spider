@@ -1,18 +1,20 @@
-from transformers import BertTokenizer, BertForSequenceClassification
-from datasets import load_dataset
+import evaluate
+from modelscope import GenerationConfig
 
-# 加载预训练的BERT模型和分词器
-tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
-model = BertForSequenceClassification.from_pretrained('bert-base-chinese', num_labels=2)
+module = evaluate.load("yuyijiong/quad_match_score")
+predictions=["food | good | food#taste | pos"]
+references=["food | good | food#taste | pos & service | bad | service#general | neg"]
+result=module.compute(predictions=predictions, references=references)
+print(result)
 
-# 加载数据集
-dataset = load_dataset('chnsenticorp')
-
-# 数据预处理
-def tokenize_function(examples):
-    return tokenizer(examples['text'], padding='max_length', truncation=True)
-
-encoded_dataset = dataset.map(tokenize_function, batched=True)
-
-# 训练模型（示例代码，实际训练需要更多步骤）
-model.train(encoded_dataset)
+# import torch
+# from transformers import T5Tokenizer, AutoModelForSeq2SeqLM
+# tokenizer = T5Tokenizer.from_pretrained("yuyijiong/T5-large-sentiment-analysis-Chinese-MultiTask")
+# model = AutoModelForSeq2SeqLM.from_pretrained("yuyijiong/T5-large-sentiment-analysis-Chinese-MultiTask", device_map="auto")
+# generation_config=GenerationConfig.from_pretrained("yuyijiong/T5-large-sentiment-analysis-Chinese-MultiTask")
+# text = '情感四元组(对象 | 观点 | 方面 | 极性)抽取任务(观点可以较长): [个头大、口感不错,就是个别坏了的或者有烂掉口子刻意用泥土封着,这样做不好。]'
+# input_ids = tokenizer(text,return_tensors="pt", padding=True)['input_ids'].cuda(0)
+# with torch.no_grad():
+#   output = model.generate(input_ids=input_ids,generation_config=generation_config)
+# output_str = tokenizer.batch_decode(output, skip_special_tokens=True)
+# print(output_str)
