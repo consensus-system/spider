@@ -1,4 +1,5 @@
 import sys
+import time
 from datetime import datetime
 from queue import Queue
 import pandas as pd
@@ -71,8 +72,8 @@ class Pin:
                 "device_platform": "webapp",
                 "aid": "6383",
                 "channel": "channel_pc_web",
-                "aweme_id": "7417438026374188329",
-                "cursor": cursor,
+                "aweme_id": self.aweme_id,
+                "cursor":cursor,
                 "count": 50,
                 "item_type": "0",
                 "insert_ids": "",
@@ -99,15 +100,15 @@ class Pin:
                 "cpu_core_num": "16",
                 "device_memory": "8",
                 "platform": "PC",
-                "downlink": "10",
+                "downlink": "9.4",
                 "effective_type": "4g",
-                "round_trip_time": "150",
+                "round_trip_time": "100",
                 "webid": "7426640757047477771",
-                "msToken": "yA6NFxH1UH6T3Ls1ShTSUuZZemlaBeuzIZiOkXE8RLWHG2mbgIgMKvJEvXoW1bdnPtRYhq1SxSlLBhGdlHnnf0MIqFNZFvr_D4TUE0AMR2A7GKAg5nR8A84c8v6tutOYDV6HrdOpCTx4c1lQJhiDQolZ2oUXTlh2IK9R3NGN5-FuqKt11k2jMA==",
-                # "a_bogus": "xX0fDzSEDqWjKdMbYKGLyfZUMF9ANBSyLei/bOOPexY4bZlasRNd2ObanxuOdqFLRuBwkK37JD0lYxVcMTUhZ9rpqmpkuYsjCT/AnU8LZqqvYtTmDqSPCwUFuw0uURwia5nRiIR56s0JId95IqAmApVGS5zLQQL2WrMVpMTyjDCW3sLTnxdve5GAowE=",
-                "verifyFp": "verify_m2cz0jiq_aHiTir6m_u5Yy_4y0W_9VQM_QuUYgW7Q0JJX",
-                "fp": "verify_m2cz0jiq_aHiTir6m_u5Yy_4y0W_9VQM_QuUYgW7Q0JJX"
-                }
+                "verifyFp": "verify_m2d7y9b9_1NSDSkgX_dRSE_4PYg_BRCo_yw9zIBOz5z70",
+                "fp": "verify_m2d7y9b9_1NSDSkgX_dRSE_4PYg_BRCo_yw9zIBOz5z70",
+                "msToken": "-pOEMl1bLGLL1utewvXLpRpYoU7msYk6Grx3szOramctyJgnNDs4g9wqi9iztjV43veWzw_ZKAJR0CvxdUgXPUcO94h0vpn9Vp5twZ1Y3DR8op0wQ8uF14k8c-Q6xo2FwmrHJs3NJK5Y9o5t_ewZLuSEmbi7h0N3GVtAnjW9qraKvpm79qvbdMQ=",
+                "a_bogus": "DfsRDq77dNWncVFtmCJ8yleUCHyArB8yVlTKbooPSxu7YZzOVSNxoNGxcxLcQIduRWpzkHVHbD0/YdVcBTUsZ9HkumpkuhwSc0C9nz6L0HppYBvh91j0SJtTokBxAbYuQA1JxoXvIUpEhxFIhNaiUr-nS/NysO0QK3xWkm7iSV-Z6T0Gf3cwHE=="
+            }
             # print('剩余评论：',self.all_comments-params['cursor'])
             self.js(params)
             self.aweme_id=params['aweme_id']
@@ -117,12 +118,16 @@ class Pin:
                 if response.status_code == 200:
                     # print(response.text)
                     response=response.json()
+                    has_more = response['has_more']
+                    print(cursor)
                     cursor += 50
-                    if cursor == 500 or cursor == 1000 or cursor == 1500 or cursor == 2000 or cursor == 2500 or cursor == 3000:
+                    if cursor == 500 or cursor == 1000 or cursor == 1500 or cursor == 2000 or cursor == 2500 :
                         open=False
                         break
                     # print(response)
                     self.parse(response,params)
+                    if has_more==0:
+                        break
             except Exception as e:
                     print(e)
                     # print(e)
@@ -137,6 +142,15 @@ class Pin:
         # "total": 541, 总评论
         try:
             self.all_comments = response['total']
+            if self.all_comments < 500:
+                self.sp = 3
+            if 500<self.all_comments <1000:
+                self.sp = 5
+            if 1000>self.all_comments>1500 :
+                self.sp = 7
+            if 1500>self.all_comments>2000 :
+                self.sp = 9
+
             print(self.all_comments)
             # print(self.all_comments)
             # "cursor": 20, 现在的数目
@@ -186,10 +200,15 @@ class Pin:
             print(e)
             print('或许此视频五评论')
             print('??')
+
     # def save(self):
     def save(self):
+        time.sleep(1)
+        time.sleep(self.sp)
+        print(self.sp)
         while True:
             comment = self.shuju.get()
+            # time.sleep(0.001)
             sql = """INSERT INTO spider_douyin (cid, text, aweme_id, create_time, ip, reply_all, nickname,awemeid, signature)
                       VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s)
                    """
@@ -205,6 +224,27 @@ class Pin:
                 self.db.rollback()
 
     def main(self):
+        import re
+        aweme_id = input(
+            '请输入视频链接，比如：https://www.douyin.com/video/7424736021813726503\n,https://www.douyin.com/user/MS4wLjABAAAAaCcBHb3Rhc4zxF8YkBOfHfLh6k-IWEK2l3Ne9xOXPnQ?from_tab_name=main&modal_id=7332474824440155455&vid=7426263125093125411\n,请输入:')
+
+        if "https://www.douyin.com/video/" in aweme_id:
+            match = re.search(r'video/(\d+)', aweme_id)
+
+            if match:
+                video_id = match.group(1)  # 提取数字
+                print(video_id)  # 输出: 7424736021813726503
+            else:
+                print("没有匹配到视频 ID")
+        if "https://www.douyin.com/user/" in aweme_id:
+            match = re.search(r'modal_id=(\d+)', aweme_id)
+            if match:
+                video_id = match.group(1)  # 提取数字
+                print(video_id)  # 输出: 7424736021813726503
+            else:
+                print("没有匹配到视频 ID")
+        self.aweme_id=video_id
+
         import json
         import time
         from DrissionPage import ChromiumPage, ChromiumOptions

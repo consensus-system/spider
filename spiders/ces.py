@@ -1,53 +1,124 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2023/8/24 下午8:07
-# @Author  : 顾安
-# @File    : 1.腾讯招聘.py
-# @Software: PyCharm
-
-"""
-https://careers.tencent.com/tencentcareer/api/post/Query?timestamp=1692878740516&countryId=&cityId=&bgIds=&productId=&categoryId=&parentCategoryId=&attrId=&keyword=python&pageIndex=2&pageSize=10&language=zh-cn&area=cn
-    获取腾讯招聘中的岗位信息并存储到mysql中
-"""
-
-import pymysql
 import requests
 
 
-class TxWork:
+headers = {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9",
+    "Connection": "keep-alive",
+    "Referer": "https://www.douyin.com/?recommend=1",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+    "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\""
+}
+cookies = {
+    "odin_tt": "9ddc9f8a662303dadeaa289d1c4cd2590ab3bcd40b1e85c6f33308621b766ad4f2153b15766f864069a5758cea610faf",
+    "passport_fe_beating_status": "true",
+    "csrf_session_id": "6bf39dded5a35da56b27c0918aa34673",
+    "stream_recommend_feed_params": "%22%7B%5C%22cookie_enabled%5C%22%3Atrue%2C%5C%22screen_width%5C%22%3A1707%2C%5C%22screen_height%5C%22%3A960%2C%5C%22browser_online%5C%22%3Atrue%2C%5C%22cpu_core_num%5C%22%3A16%2C%5C%22device_memory%5C%22%3A8%2C%5C%22downlink%5C%22%3A9.4%2C%5C%22effective_type%5C%22%3A%5C%224g%5C%22%2C%5C%22round_trip_time%5C%22%3A100%7D%22",
+    "IsDouyinActive": "true",
+    "device_web_cpu_core": "16",
+    "xg_device_score": "7.543555232969925",
+    "douyin.com": "",
+    "store-region": "cn-hn",
+    "publish_badge_show_info": "%220%2C0%2C0%2C1729164641013%22",
+    "fpk2": "16453d6e2683b8800ded2a27c7f595d9",
+    "ssid_ucp_v1": "1.0.0-KGI5NDY2OGM2ZDFjNTkwNjNhOGI2NTYxOGUyMWJlNTM1NzA3YzFlZGYKGgig-rDcqswaENTqw7gGGO8xIAw4BkD0B0gEGgJscSIgZTk5ZmFkZjExYTk0OGNhZGZiMjkxOWE3NDQwY2JlZDQ",
+    "sid_ucp_v1": "1.0.0-KGI5NDY2OGM2ZDFjNTkwNjNhOGI2NTYxOGUyMWJlNTM1NzA3YzFlZGYKGgig-rDcqswaENTqw7gGGO8xIAw4BkD0B0gEGgJscSIgZTk5ZmFkZjExYTk0OGNhZGZiMjkxOWE3NDQwY2JlZDQ",
+    "__security_server_data_status": "1",
+    "_bd_ticket_crypt_cookie": "8bbf9ae22d47bbbd8f5cb2634f4fc79b",
+    "architecture": "amd64",
+    "_bd_ticket_crypt_doamin": "2",
+    "sessionid_ss": "e99fadf11a948cadfb2919a7440cbed4",
+    "n_mh": "rDuZz-aoWmkhYtDap6Es0acvWAfgKva_TGSGQurDq2o",
+    "uid_tt": "8491d84e3dac01c51298ba4ba626434e",
+    "volume_info": "%7B%22isUserMute%22%3Afalse%2C%22isMute%22%3Atrue%2C%22volume%22%3A0.5%7D",
+    "passport_auth_status_ss": "03980f71209895c8a76afedfb344ab8a%2C",
+    "passport_auth_status": "03980f71209895c8a76afedfb344ab8a%2C",
+    "sid_ucp_sso_v1": "1.0.0-KDZjY2Q5MWMwOWI3NzBiMmE2YjU5NTI0YjQ5NTc2YzYxOWYzMTI1N2UKIAig-rDcqswaEM7qw7gGGO8xIAwwj_GqqQY4BkD0B0gGGgJobCIgZjljMmNiZWRiOGM0ZWE1NjNlYzgzNDczOGE2ZTM0MGM",
+    "toutiao_sso_user": "f9c2cbedb8c4ea563ec834738a6e340c",
+    "sso_uid_tt_ss": "fc6302a7fb72ac734ff41c0258571516",
+    "store-region-src": "uid",
+    "device_web_memory_size": "8",
+    "sessionid": "e99fadf11a948cadfb2919a7440cbed4",
+    "home_can_add_dy_2_desktop": "%221%22",
+    "bd_ticket_guard_client_web_domain": "2",
+    "passport_mfa_token": "Cjapd9FhOUUGk%2F1rW3VtnjbOa4yGe8YBTczjkT7IMOwig167kBaZmeRhwbUYaDO34QkYjJDSChIaSgo8ND9jUbTHVU2x5TWUiaKoc%2FWf1E5E7vc8F1IhrY6rpnKInvHW1dU%2F4nPjgDAaxxyZbNhqoSKW5S5FMTaCEI7%2B3g0Y9rHRbCACIgEDuJe2Jw%3D%3D",
+    "strategyABtestKey": "%221729164593.543%22",
+    "FORCE_LOGIN": "%7B%22videoConsumedRemainSeconds%22%3A180%7D",
+    "UIFID": "60b2ef133e5e740633c50bb923c1ddfcacd13dfeee1bbba287269d01840b457bfaf5f5568f1e78a417e32deb2b9f53d4ebab99c873b851b8efd02b2f6c7dc0f73b858765cfcd644281a3380e3cbc5ca05aa53740c7d9db770604801b5c914e1d53de59ac50ea6395fc86365cdbb068a23174e7b5923ffad41c1c76cfd5fdb907122d37a5c22d359e286dc59978381aa5fe3a61e382efc608c29ee089148f8a1387f33f44f9cf9f38b1b66a54a82deec3",
+    "toutiao_sso_user_ss": "f9c2cbedb8c4ea563ec834738a6e340c",
+    "sid_tt": "e99fadf11a948cadfb2919a7440cbed4",
+    "hevc_supported": "true",
+    "UIFID_TEMP": "60b2ef133e5e740633c50bb923c1ddfcacd13dfeee1bbba287269d01840b457bfaf5f5568f1e78a417e32deb2b9f53d474fd8ea79619d2380045d80069ecab9bfd848128963ce7065c06e5e6d6f8dcefb3ae333b9bfc567780c86e20c4d83059",
+    "is_staff_user": "false",
+    "xgplayer_user_id": "195767115679",
+    "sid_guard": "e99fadf11a948cadfb2919a7440cbed4%7C1729164628%7C5183997%7CMon%2C+16-Dec-2024+11%3A30%3A25+GMT",
+    "passport_csrf_token": "d3a1b318a990db8f9d1d992c6393e8dc",
+    "FOLLOW_NUMBER_YELLOW_POINT_INFO": "%22MS4wLjABAAAAU2_4Puek5Zc64rED1iC-G2nWYHvoJZymhrIJN59gQnnIi3SGwqH-UBast5BTjuXk%2F1729180800000%2F0%2F1729164513192%2F0%22",
+    "__ac_signature": "_02B4Z6wo00f01b-KM7gAAIDAY.OsDSl3LbW.qjcAAAjz2c",
+    "d_ticket": "cbdb06731df6c492cb5ab0b9c6903117ee129",
+    "ssid_ucp_sso_v1": "1.0.0-KDZjY2Q5MWMwOWI3NzBiMmE2YjU5NTI0YjQ5NTc2YzYxOWYzMTI1N2UKIAig-rDcqswaEM7qw7gGGO8xIAwwj_GqqQY4BkD0B0gGGgJobCIgZjljMmNiZWRiOGM0ZWE1NjNlYzgzNDczOGE2ZTM0MGM",
+    "fpk1": "U2FsdGVkX1+ZVJQYoS5hBB+7nG6cnRAWO/KuZZSUSbr/A1nQduDxiEdl+SXW4dOHfak1bwBwP49bO/+d8PgokQ==",
+    "dy_sheight": "960",
+    "__ac_nonce": "06710f52000030cc179ac",
+    "passport_csrf_token_default": "d3a1b318a990db8f9d1d992c6393e8dc",
+    "uid_tt_ss": "8491d84e3dac01c51298ba4ba626434e",
+    "passport_assist_user": "CkB0DPnyZwqTGr8aiH1doq1ByTC3EDzy_hXDqCLPYYuxexcAcyIt2fO5Q0r0VmE-8CqzAW7bLf0QVUgua4vqr2UpGkoKPAUMYrcb3FotxDZQU-4jOwQD00H7I9w59NsF7RVgWtAJiFYfvvBV54_S_RgLFwuPsMEUTHdVkNfZcuNdhhCF_t4NGImv1lQgASIBA9BD9Xc%3D",
+    "stream_player_status_params": "%22%7B%5C%22is_auto_play%5C%22%3A0%2C%5C%22is_full_screen%5C%22%3A0%2C%5C%22is_full_webscreen%5C%22%3A0%2C%5C%22is_mute%5C%22%3A1%2C%5C%22is_speed%5C%22%3A1%2C%5C%22is_visible%5C%22%3A1%7D%22",
+    "SelfTabRedDotControl": "%5B%5D",
+    "sso_uid_tt": "fc6302a7fb72ac734ff41c0258571516",
+    "s_v_web_id": "verify_m2d7y9b9_1NSDSkgX_dRSE_4PYg_BRCo_yw9zIBOz5z70",
+    "dy_swidth": "1707",
+    "ttwid": "1%7CS2MOUVCPs7zxO68heUMx9mmItnzNrp0y-A4vebL5tUc%7C1729149566%7C2117253a40da294adba3386941f3c497eeadc9bc6150fb1f7859969790757e6a",
+    "bd_ticket_guard_client_data": "eyJiZC10aWNrZXQtZ3VhcmQtdmVyc2lvbiI6MiwiYmQtdGlja2V0LWd1YXJkLWl0ZXJhdGlvbi12ZXJzaW9uIjoxLCJiZC10aWNrZXQtZ3VhcmQtcmVlLXB1YmxpYy1rZXkiOiJCTWRCTGJoTitDUENpQW1PU3EyNk5Hck1MV09SSGwwQTVieGh6VStxRGNQMjExSzJVYjBOQ3MvN09SdVJnZHdLQWJxNStydXFTTXJkQUp2MlVBbGNGT2M9IiwiYmQtdGlja2V0LWd1YXJkLXdlYi12ZXJzaW9uIjoyfQ%3D%3D"
+}
+url = "https://www.douyin.com/aweme/v1/web/comment/list/"
+params = {
+    "device_platform": "webapp",
+    "aid": "6383",
+    "channel": "channel_pc_web",
+    "aweme_id": "7405355187977604402",
+    "cursor": 10000,
+    "count": "20",
+    "item_type": "0",
+    "insert_ids": "",
+    "whale_cut_token": "",
+    "cut_version": "1",
+    "rcFT": "",
+    "update_version_code": "170400",
+    "pc_client_type": "1",
+    "pc_libra_divert": "Windows",
+    "version_code": "170400",
+    "version_name": "17.4.0",
+    "cookie_enabled": "true",
+    "screen_width": "1707",
+    "screen_height": "960",
+    "browser_language": "zh-CN",
+    "browser_platform": "Win32",
+    "browser_name": "Chrome",
+    "browser_version": "129.0.0.0",
+    "browser_online": "true",
+    "engine_name": "Blink",
+    "engine_version": "129.0.0.0",
+    "os_name": "Windows",
+    "os_version": "10",
+    "cpu_core_num": "16",
+    "device_memory": "8",
+    "platform": "PC",
+    "downlink": "9.4",
+    "effective_type": "4g",
+    "round_trip_time": "100",
+    "webid": "7426640757047477771",
+    "verifyFp": "verify_m2d7y9b9_1NSDSkgX_dRSE_4PYg_BRCo_yw9zIBOz5z70",
+    "fp": "verify_m2d7y9b9_1NSDSkgX_dRSE_4PYg_BRCo_yw9zIBOz5z70",
+    "msToken": "-pOEMl1bLGLL1utewvXLpRpYoU7msYk6Grx3szOramctyJgnNDs4g9wqi9iztjV43veWzw_ZKAJR0CvxdUgXPUcO94h0vpn9Vp5twZ1Y3DR8op0wQ8uF14k8c-Q6xo2FwmrHJs3NJK5Y9o5t_ewZLuSEmbi7h0N3GVtAnjW9qraKvpm79qvbdMQ=",
+    "a_bogus": "DfsRDq77dNWncVFtmCJ8yleUCHyArB8yVlTKbooPSxu7YZzOVSNxoNGxcxLcQIduRWpzkHVHbD0/YdVcBTUsZ9HkumpkuhwSc0C9nz6L0HppYBvh91j0SJtTokBxAbYuQA1JxoXvIUpEhxFIhNaiUr-nS/NysO0QK3xWkm7iSV-Z6T0Gf3cwHE=="
+}
+response = requests.get(url, headers=headers, cookies=cookies, params=params)
 
-    def __init__(self):
-        self.db = pymysql.connect(host='localhost', user='root', password='321542', db='mysql')
-        self.cursor = self.db.cursor()
-
-    def create_table(self):
-        sql = """
-                 CREATE TABLE spider_douyin (
-    id INT AUTO_INCREMENT PRIMARY KEY,  -- 自增主键
-    cid VARCHAR(255) NOT NULL,           -- 评论 ID
-    text TEXT NOT NULL,                   -- 评论内容
-    aweme_id VARCHAR(255) NOT NULL,      -- 视频 ID
-    create_time DATETIME NOT NULL,       -- 创建时间
-    ip VARCHAR(45) NOT NULL,              -- IP 地址
-    reply_all INT DEFAULT 0,             -- 回复总数
-    nickname VARCHAR(255) NOT NULL,      
-    awemeid VARCHAR(255) NOT NULL,-- 用户昵称
-    signature TEXT                        -- 用户签名
-);
-
-               """
-        try:
-            self.cursor.execute(sql)
-            print('数据表创建成功...')
-        except Exception as e:
-            print('数据表创建失败: ', e)
-
-    def main(self):
-        self.create_table()
-
-        self.db.close()
-
-
-if __name__ == '__main__':
-    tx_work = TxWork()
-    tx_work.main()
-
+print(response.text)
+print(response)

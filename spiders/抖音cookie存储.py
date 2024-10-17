@@ -2,7 +2,7 @@ import json
 import time
 from DrissionPage import ChromiumPage,ChromiumOptions
 name =input('请你登录想要登录的账号,写你的名字，或者代号：')
-do1 = ChromiumOptions().auto_port().set_paths(local_port=9121, user_data_path=r'D:\data5')
+do1 = ChromiumOptions().auto_port().set_paths(local_port=9123, user_data_path=r'D:\data6')
 # page = ChromiumPage(do1)
 page2 = ChromiumPage(do1)
 page2.get('https://www.douyin.com')
